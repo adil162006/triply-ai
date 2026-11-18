@@ -151,10 +151,5 @@ To generate migration files instead, run `npm run db:generate`; apply generated 
 
 No test script is currently defined in `package.json`.
 
-## Screenshots
-
-![Triply application screenshot](assets/images/screenshot-for-readme.png)
-
-## License
 
 See [LICENSE](LICENSE).
