@@ -1,194 +1,160 @@
-<h1 align="center">✈️ Full-Stack AI Trip Planner Mobile App ✈️</h1>
+# Triply
 
+Triply is a mobile-first AI travel planner. It turns a destination, dates, group size, budget, interests, and travel pace into a saved itinerary and budget breakdown, with a conversational assistant for travel questions.
 
-✨ **Highlights:**
+## What it does
 
-- 📱 Fully Functional Mobile App built with React Native & Expo
-- 🤖 AI-Powered Trip Planning with OpenAI
-- 🧑‍💻 Beginner-Friendly Structured Workflow
-- 📱 Cross-Platform Support for iOS & Android
-- 🔐 Authentication with Clerk
-- 🌐 Google Sign-In Support
-- 🍎 Apple Sign-In Support
-- 🏠 Home Screen with latest trip and popular destinations
-- 🚀 Generate Personalized Trips with AI
-- 🗺️ Trip Details Screen with full itinerary
-- 📅 Day-by-Day Travel Planning
-- 📍 Places to Visit, Activities & Map Locations
-- 💬 AI Assistant to Modify and Improve Trips
-- 🧳 Trips Screen to view all generated travel plans
-- 👤 Profile Screen with account details
-- 🚪 Secure Logout Flow
-- 🗑️ Delete Account with full database cleanup
-- ⭐ Rate App Button for App Store reviews
-- 🎨 Modern iOS Liquid Glass Tab Effect using Expo Native Tabs
-- 🧠 AI-Generated UI Mockups and Design System
-- 🎨 Custom Colors, Fonts, Typography & Components
-- 🧩 Build Screens One by One from Upscaled Designs
-- 🗄️ PostgreSQL Database for persistent data storage
-- ☁️ Cloud Database Hosting with Neon
-- ⚡ Background Jobs with Inngest
-- 🖼️ Destination Images with Unsplash
-- 📤 Image Uploads & Optimizations with ImageKit
-- 🐞 Error Tracking & Monitoring with Sentry
-- 🤖 AI Code Review with CodeRabbit
-- 🌐 Landing Page for the App
-- 📄 Privacy Policy, Terms of Service & Support Page
-- 🚀 App Store-Ready Project Structure
-- 🆓 100% Free Setup to Get Started
-- 📂 Full Source Code Provided
-- 🎯 Real Product You Can Share, Launch & Monetize
+- Create, browse, and manage AI-generated trips.
+- Generate itineraries and budget breakdowns asynchronously, with trip status updates.
+- Ask a separate AI travel assistant questions and revisit or clear its transcript.
+- Sign in with Clerk, including Google and Apple sign-in flows.
+- Add a personal trip cover photo; generated and uploaded images are delivered through ImageKit.
 
----
+## Technology
 
-# 🧪 `.env` Setup
+| Area | Technology | Role |
+| --- | --- | --- |
+| Mobile app | Expo SDK 56, React Native 0.85, React 19, TypeScript | Cross-platform native application |
+| Navigation and UI | Expo Router, Expo native tabs, NativeWind v4, `@expo/ui` | File-based routes, native tab navigation, and styling/components |
+| Authentication | Clerk (`@clerk/expo`) | User sessions and OAuth sign-in |
+| Data | Neon Postgres, Drizzle ORM | Persistent users, trips, chat transcripts, and generation usage |
+| AI | OpenAI | Trip plans, budgets, and streaming assistant responses |
+| Background work | Inngest | Durable trip generation and Clerk user synchronization |
+| Images | Unsplash, ImageKit | Trip imagery, uploads, optimization, and delivery |
+| Monitoring | Sentry | Mobile error tracking, traces, logs, and session replay |
 
-Create a `.env` file in the **root of the project** and add the following variables:
+## Application flow
 
-```bash
-EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=<your_clerk_publishable_key>
-CLERK_SECRET_KEY=<your_clerk_secret_key>
-CLERK_WEBHOOK_SIGNING_SECRET=<your_clerk_webhook_signing_secret>
-DATABASE_URL=<your_neon_postgres_database_url>
-OPENAI_API_KEY=<your_openai_api_key>
-UNSPLASH_ACCESS_KEY=<your_unsplash_access_key>
-UNSPLASH_SECRET_KEY=<your_unsplash_secret_key>
-INNGEST_DEV=<your_inngest_dev_value>
-IMAGEKIT_PRIVATE_KEY=<your_imagekit_private_key>
-IMAGEKIT_PUBLIC_KEY=<your_imagekit_public_key>
-IMAGEKIT_URL_ENDPOINT=<your_imagekit_url_endpoint>
-SENTRY_AUTH_TOKEN=<your_sentry_auth_token>
+1. A user signs in through Clerk and enters the protected native-tab area.
+2. The trip form submits preferences to `POST /api/trips`. The API validates the request, reserves the daily generation allowance, stores a pending trip, and dispatches an Inngest event.
+3. An Inngest function generates an itinerary and budget with OpenAI, optionally obtains a destination cover image, then stores the result. The loading screen polls the trip status route.
+4. Users view and delete saved trips. The travel companion has a per-user transcript that can be revisited or cleared.
+5. Clerk user webhooks are verified and sent to Inngest for database synchronization.
+
+## Project structure
+
+```text
+src/
+  app/                 Expo Router screens and API route handlers
+    (auth)/             Sign-in routes
+    (home)/             Home, assistant, trips, and profile tabs
+    api/                Trips, assistant, Inngest, and Clerk webhook endpoints
+    trip/               Trip detail and generation loading screens
+  components/           Shared UI components
+  db/                   Drizzle schema and Neon database client
+  hooks/                React hooks, including sign-in helpers
+  inngest/              Inngest client and background functions
+  lib/                  API clients, auth, AI, image, and trip utilities
+assets/                 App images and icons
+design/                 UI design references
+legal/                  Privacy, terms, and support pages
 ```
 
----
+## Prerequisites
 
-## 🔧 Run the App
+- Node.js and npm (the repository includes `package-lock.json`).
+- Expo-compatible iOS or Android development tooling for native builds; the project includes `expo-dev-client`.
+- Credentials for Clerk, Neon Postgres, OpenAI, Unsplash, ImageKit, and the local Inngest development server.
 
-```bash
-npm install
-npx expo run:ios
+## Setup
+
+1. Install dependencies:
+
+   ```sh
+   npm install
+   ```
+
+2. Create a local environment file from the template:
+
+   ```sh
+   cp .env.example .env
+   ```
+
+   On Windows PowerShell, use `Copy-Item .env.example .env`.
+
+3. Fill in the credentials described below. Keep `.env` private; it is ignored by Git.
+
+4. Create a Neon Postgres database and set `DATABASE_URL` to its connection string. Apply the schema using Drizzle (see [Database](#database)).
+
+5. Start the Expo development server and, in a separate terminal, start the Inngest development server:
+
+   ```sh
+   npm run start
+   npm run inngest
+   ```
+
+   The Inngest script points to `http://localhost:8081/api/inngest`. If Expo uses another port, update that URL accordingly.
+
+For a native development build, use `npm run ios` or `npm run android`. Web is available with `npm run web`.
+
+## Environment variables
+
+`.env.example` is the authoritative list of environment variable names. Add values to your local `.env`; do not commit secrets.
+
+| Variable | Purpose |
+| --- | --- |
+| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk client configuration; required by the app at startup |
+| `CLERK_SECRET_KEY` | Clerk server-side authentication |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | Verifies incoming Clerk webhooks |
+| `DATABASE_URL` | Neon Postgres connection string |
+| `OPENAI_API_KEY` | Trip plan and assistant generation |
+| `UNSPLASH_ACCESS_KEY` | Search for destination cover images |
+| `UNSPLASH_SECRET_KEY` | Present in the environment template for Unsplash credentials |
+| `IMAGEKIT_PRIVATE_KEY` | Server-side ImageKit uploads |
+| `IMAGEKIT_PUBLIC_KEY` | ImageKit configuration |
+| `IMAGEKIT_URL_ENDPOINT` | ImageKit image delivery endpoint |
+| `INNGEST_DEV` | Set to `1` for local Inngest development |
+| `INNGEST_SIGNING_KEY`, `INNGEST_EVENT_KEY` | Inngest credentials marked in the template as production-only |
+
+Configure Google and Apple OAuth providers in Clerk for the corresponding sign-in options. For deployed environments, configure Clerk’s webhook destination and Inngest keys to match the deployment.
+
+## API routes
+
+User-facing trip and assistant endpoints require a valid Clerk-authenticated request. The Clerk webhook verifies its signature, and the Inngest route is handled by the Inngest SDK. Responses and validation details are implemented in the route handlers.
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `GET`, `POST` | `/api/trips` | List the signed-in user’s trips; create a trip and queue generation |
+| `GET`, `DELETE` | `/api/trips/:id` | Read or delete an owned trip |
+| `GET` | `/api/trips/:id/status` | Read generation status and any safe failure message |
+| `PATCH` | `/api/trips/:id/cover` | Upload and set a user-selected cover image |
+| `POST` | `/api/assistant` | Stream an AI travel-assistant response |
+| `GET`, `DELETE` | `/api/assistant/messages` | Read or clear the signed-in user’s assistant transcript |
+| `GET`, `POST`, `PUT` | `/api/inngest` | Inngest function serving endpoint |
+| `POST` | `/api/webhooks/clerk` | Verify Clerk user events and enqueue synchronization |
+
+## Database
+
+The Drizzle schema is in `src/db/schema.ts`. It defines users, trips, trip chat messages, assistant messages, and per-user daily generation usage. `drizzle.config.ts` reads `DATABASE_URL` and writes generated migrations to `drizzle/`.
+
+Use the schema push command to apply the current schema directly to the configured database:
+
+```sh
+npm run db:push
 ```
 
-or
+To generate migration files instead, run `npm run db:generate`; apply generated migrations with `npx drizzle-kit migrate`. Inspect the database with `npm run db:studio`.
 
-```bash
-npx expo run:android
-```
+## Development commands
 
-## 📱 Features Overview
+| Command | Description |
+| --- | --- |
+| `npm run start` | Start Expo development server |
+| `npm run ios` | Run the iOS native development build |
+| `npm run android` | Run the Android native development build |
+| `npm run web` | Start Expo for web |
+| `npm run inngest` | Start local Inngest dev server connected to the app endpoint |
+| `npm run lint` | Run Expo ESLint |
+| `npm run db:generate` | Generate Drizzle migration files |
+| `npm run db:push` | Push schema changes to the configured database |
+| `npm run db:studio` | Open Drizzle Studio |
 
-### 🔐 Authentication
+No test script is currently defined in `package.json`.
 
-Users must sign in before using the app.
+## Screenshots
 
-Supported authentication options:
+![Triply application screenshot](assets/images/screenshot-for-readme.png)
 
-- Google Sign-In
-- Apple Sign-In
+## License
 
-Authentication is handled using Clerk, making the login flow production-ready and easy to extend later.
-
-### 🏠 Home Screen
-
-The Home screen includes:
-
-- Get Started button to generate a new trip
-- Latest generated trip
-- Popular destinations
-- Beautiful mobile-first layout
-- Native tab navigation with iOS Liquid Glass effect
-
-### 🤖 AI Trip Generation
-
-Users can generate a personalized trip by entering:
-
-- Destination
-- Travel dates
-- Budget
-- Number of travelers
-- Interests
-- Travel pace
-
-OpenAI generates a complete trip plan in the background.
-
-### 🗺️ Trip Details Screen
-
-After generation, users are redirected to the Trip Details screen.
-
-This screen includes:
-
-- Full trip overview
-- Day-by-day itinerary
-- Places to visit
-- Things to do
-- Map with all trip locations
-
-### 💬 AI Assistant
-
-The AI Assistant lets users chat with AI and modify their trips using natural language.
-
-Example requests:
-
-- Make the trip more relaxed
-- Add more local food spots
-- Lower the budget
-- Add more sightseeing
-- Change the travel pace
-- Customize the itinerary
-
-### 🧳 Trips Screen
-
-Users can view every trip they have generated in one place.
-
-### 👤 Profile Screen
-
-The Profile tab includes:
-
-- User account details
-- Logout button
-- Delete account option
-- Full database cleanup when account is deleted
-- Rate App button
-
-### 🌐 Web Pages
-
-The project also includes App Store-ready web pages:
-
-- Landing page
-- Privacy policy
-- Terms of service
-- Support page with contact email
-
-## 🛠️ Tech Stack
-
-- React Native
-- Expo
-- TypeScript
-- OpenAI
-- Clerk
-- PostgreSQL
-- Neon
-- Inngest
-- Unsplash
-- ImageKit
-- Sentry
-- CodeRabbit
-- Expo Native Tabs
-
-## 🚀 Deployment Ready
-
-This project is built with a real production workflow in mind.
-
-You can:
-
-- Run it on your physical phone
-- Share it with friends
-- Test real AI trip generation
-- Connect it to a production database
-- Add App Store required pages
-- Prepare it for publishing
-- Use it as a real product
-
-## 📂 Source Code
-
-Full source code is included with the tutorial.
+See [LICENSE](LICENSE).
